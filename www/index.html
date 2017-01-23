@@ -23,20 +23,133 @@
         <meta name="format-detection" content="telephone=no" />
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
         <link rel="stylesheet" type="text/css" href="css/index.css" />
-        <title>Hello World</title>
+        <title>Healthcare facility location</title>
+        <style>
+      body,
+      html {
+        border: 0px;
+        height: 100%;
+        margin: 0px;
+        width: 100%;
+      }
+      #map-canvas {
+        height: 600px;
+        width: 100%;
+      }
+      /* custom css for dealing with bootstrap - google maps issue */
+      #map-canvas label {
+        display: inline;
+        width: auto;
+      }
+      #map-canvas img {
+        max-width: none;
+      }
+      .gm-style-iw{
+        overflow: hidden !important;
+      }
+    </style>
     </head>
     <body>
         <div class="app">
-            <h1>PhoneGap</h1>
+            <h1>HCLocator</h1>
             <div id="deviceready">
                 <p class="status pending blink">Connecting to Device</p>
                 <p class="status complete blink hide">Device is Ready</p>
             </div>
         </div>
+        <div class="container">
+      <div class="page-header">
+        <h1>Facilities on the Map</h1>
+        <p>Healthcare facilities closest to your location
+        </p>
+	<form>
+		<h3>Select facilities:
+			<select id="no" onchange="initialize(); locate();">
+				<option>2</option>
+				<option>5</option>
+				<option>8</option>
+				<option>10</option>
+				<option>20</option>
+				<option>30</option>
+				<option>40</option>
+				<option>50</option>
+				<option>60</option>
+			</select> near me 
+			</h3>
+		<input id="ClickMe" type="button" value="Search" onclick="doFunction();" />
+	</form>
+      </div>
+      <div id="map-canvas" class="panel"></div>
+    </div>
         <script type="text/javascript" src="cordova.js"></script>
         <script type="text/javascript" src="js/index.js"></script>
-        <script type="text/javascript">
-            app.initialize();
-        </script>
+        <script>
+	  document.getElementById("no").onchange = initialize(); locate();
+	  function initialize(lat, long) {
+        //var no = document.getElementById("no");
+		//var option = no.options[no.selectedIndex].text;
+		var txt = document.getElementById("no").value;
+		google.maps.visualRefresh = true;
+        "use strict";
+        var map, 
+        layer;
+        map = new google.maps.Map(document.getElementById("map-canvas"), {
+            center: new google.maps.LatLng(lat, long),
+            zoom: 15,
+            mapTypeId: 'roadmap'
+          });
+      
+        layer = new google.maps.FusionTablesLayer({
+            query: {
+              // Geotagged wikipedia articles, for test purpose
+              // https://www.google.com/fusiontables/DataSource?docid=1euiomfZmrQ5Kb91DX-1QoiJHu7s0nDUz3IKu44sX
+              // select: 'Coordinates',
+              // from: '1euiomfZmrQ5Kb91DX-1QoiJHu7s0nDUz3IKu44sX',
+			  select: "col48",
+			  from: "1euiomfZmrQ5Kb91DX-1QoiJHu7s0nDUz3IKu44sX",
+              orderBy: 'ST_DISTANCE(col48, LATLNG(' + lat + ',' + long + '))',
+              //  Code for original table from SO-question below     
+              //  select: 'Location',
+              //  from: '16JfuLxarMf5UjxThG2Tno_SZoNSZ_ExwbQyCeu0',
+              //  orderBy: 'ST_DISTANCE(Location, LATLNG(' + lat + ',' + long + '))',
+              limit: txt
+			  //
+            }
+          });
+        layer.setMap(map);
+        } 
+		function locate() {
+        var lat, long;
+        lat = 3.148,
+        long = 101.715;
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function success(position) {
+            lat = position.coords.latitude;
+            long = position.coords.longitude;
+            initialize(lat, long);
+          }, function (error) {
+            switch (error.code) {
+            case error.TIMEOUT:
+              alert('Timeout. Try again.');
+              return initialize(lat, long);
+            case error.POSITION_UNAVAILABLE:
+              alert('Your position is not available at the moment.');
+              return initialize(lat, long);
+            case error.PERMISSION_DENIED:
+              alert('No geolocation. Things wont work out this way.');
+              return initialize(lat, long);
+            case error.UNKNOWN_ERROR:
+              alert('Unknown error. Fyi.');
+              return initialize(lat, long);
+            }
+          });
+        } else {
+          alert('Your device does not support geolocation');
+          // IE-8 issue...
+          return initialize(lat, long);
+        }
+		}
+	</script>
+     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAnxSfiCLcP37hVTng9Gt3M7mpexhnzo04&callback=locate" async defer></script>
     </body>
 </html>
